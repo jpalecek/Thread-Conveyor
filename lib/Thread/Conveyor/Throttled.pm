@@ -223,7 +223,6 @@ sub _red {
     if ($$halted) {
         return 0 if $noblock;
         threads::shared::cond_wait( $semaphore ) while $$halted;
-        threads::shared::cond_broadcast( $semaphore );
 
 # Elseif there are now too many boxes in the belt
 #  Set the box putting halted flag
@@ -234,9 +233,7 @@ sub _red {
     } elsif ($belt->onbelt > $self->{'maxboxes'}) {
         $$halted = 1;
         return 0 if $noblock;
-        threads::shared::cond_broadcast( $semaphore );
         threads::shared::cond_wait( $semaphore ) while $$halted;
-        threads::shared::cond_broadcast( $semaphore );
     }
     return 1;
 } #_red
