@@ -7,7 +7,7 @@ BEGIN {				# Magic Perl CORE pragma
 
 use strict;
 use warnings;
-use Test::More tests => 2 + (2 * (16 + 3 * (3 * 5 + 2 * 6 + 1) ) );
+use Test::More tests => 2 + (2 * (16 + 3 * (4 * 5 + 3 * 6 + 1) ) );
 
 BEGIN { use_ok('Thread::Conveyor') }
 
@@ -78,19 +78,32 @@ foreach my $optimize (qw(cpu memory)) {
 
   foreach my $times (10,1000,100000) {
 
+      my @n : shared = ();
+      my $belt;
     foreach (
      {@base},
      {@base, maxboxes => undef},
      {@base, maxboxes => 500, minboxes => 495},
+        {@base, maxboxes => 500, minboxes => 495, threadf => sub {
+            while (1) {
+                my @g = $belt->clean;
+                unless (defined( $g[-1][0] )) {
+                    push @n, map { $_->[0] } @g[0..(@g-2)];
+                    last;
+                }
+                push @n, map { $_->[0] } @g;
+       }
+         } },
     ) {
 
       my %saved = (%$_);
-      my $belt = Thread::Conveyor->new( $_ );
+      $belt = Thread::Conveyor->new( $_ );
 
       isa_ok( $belt,'Thread::Conveyor',	'check object type' );
 
-      my @n : shared = ();
-      my $thread = threads->new( sub {
+      @n = ();
+
+      my $thread = threads->new( $saved{'threadf'} // sub {
        while (1) {
          my ($n) = $belt->take;
          last unless defined( $n );

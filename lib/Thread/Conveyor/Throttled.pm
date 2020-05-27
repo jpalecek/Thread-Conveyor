@@ -96,8 +96,9 @@ sub take {
 # Go perform the ordinary method
 
     my $self = shift;
+    my @ret = $self->{'belt'}->take( @_ );
     $self->_green;
-    $self->{'belt'}->take( @_ );
+    @ret;
 } #take
 
 #---------------------------------------------------------------------------
@@ -111,21 +112,32 @@ sub take_dontwait {
 # Go perform the ordinary method
 
     my $self = shift;
+    my @ret = $self->{'belt'}->take_dontwait( @_ );
     $self->_green;
-    $self->{'belt'}->take_dontwait( @_ );
+    @ret;
 } #take_dontwait
 
 #---------------------------------------------------------------------------
 #  IN: 1 instantiated object
 # OUT: 1..N references to contents of boxes
 
-sub clean { shift->{'belt'}->clean } #clean
+sub clean {
+    my $self = shift;
+    my @ret = $self->{'belt'}->clean;
+    $self->_green;
+    @ret;
+} #clean
 
 #---------------------------------------------------------------------------
 #  IN: 1 instantiated object
 # OUT: 1..N references to contents of boxes
 
-sub clean_dontwait { shift->{'belt'}->clean_dontwait } #clean_dontwait
+sub clean_dontwait {
+    my $self = shift;
+    my @ret = $self->{'belt'}->clean_dontwait;
+    $self->_green;
+    @ret;
+} #clean_dontwait
 
 #---------------------------------------------------------------------------
 #  IN: 1 instantiated object
