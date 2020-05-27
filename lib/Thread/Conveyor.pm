@@ -256,7 +256,7 @@ You can call the class method L<optimize> to change the default optimization.
  $optimize = Thread::Conveyor->optimize;
 
 The "optimize" class method allows you to specify the default optimization
-type that will be used if no "optimize" field has been explicitely specified
+type that will be used if no "optimize" field has been explicitly specified
 with a call to L<new>.  It returns the current default type of optimization.
 
 Currently two types of optimization can be selected:
@@ -266,7 +266,7 @@ Currently two types of optimization can be selected:
 =item memory
 
 Attempt to use as little memory as possible.  Currently, this is achieved by
-starting a seperate thread which hosts an unshared array.  This uses the
+starting a separate thread which hosts an unshared array.  This uses the
 "Thread::Conveyor::Thread" sub-class.
 
 =item cpu
@@ -336,7 +336,7 @@ contents of each box.
 
  @lookahead = $belt->peek( $index );
 
-The "peek" method waits for a box to become availabe at the end of the
+The "peek" method waits for a box to become available at the end of the
 belt, but does B<not> remove it from the belt like the L<take> method does.
 It does however thaw the contents and returns the resulting values and
 references.
@@ -419,14 +419,14 @@ until all of the boxes on the belt have been removed before it returns.
  $thread = $belt->thread;
 
 The "thread" method returns the thread object that is being used for the belt.
-It returns undef if no seperate thread is being used.
+It returns undef if no separate thread is being used.
 
 =head2 tid
 
  $tid = $belt->tid;
 
 The "tid" method returns the thread id of the thread object that is being
-used for the belt.  It returns undef if no seperate thread is being used.
+used for the belt.  It returns undef if no separate thread is being used.
 
 =head1 REQUIRED MODULES
 
