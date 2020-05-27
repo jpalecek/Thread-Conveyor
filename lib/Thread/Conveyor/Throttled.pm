@@ -260,7 +260,7 @@ sub _green {
 
     lock( $semaphore );
     return unless $$halted;
-    return if $belt->onbelt > $belt->{'minboxes'};
+    return if $belt->onbelt > $self->{'minboxes'};
 
 # Reset the halted flag, allow box putting again
 # Wake up all of the other threads to allow them to submit again
