@@ -70,6 +70,23 @@ sub put {
 
 #---------------------------------------------------------------------------
 #  IN: 1 instantiated object
+#      2..N parameters to be passed as a box onto the belt
+# OUT: true if the request succeeded
+
+sub put_noblock {
+
+# Obtain the object
+# De-activate box putting if too many now
+# Go perform the ordinary method
+
+    my $self = shift;
+    return 0 unless $self->_red(1);
+    $self->{'belt'}->put( @_ );
+    return 1;
+} #put
+
+#---------------------------------------------------------------------------
+#  IN: 1 instantiated object
 # OUT: 1..N parameters returned from a box on the belt
 
 sub take {
@@ -193,7 +210,8 @@ sub _red {
 # Obtain local copy of the belt
 
     my $self = shift;
-    return unless $self->{'maxboxes'};
+    return 1 unless $self->{'maxboxes'};
+    my $noblock = shift;
     my ($belt,$semaphore,$halted) = @$self{qw(belt semaphore halted)};
 
 # Lock the belt
@@ -202,8 +220,8 @@ sub _red {
 #  Notify the rest of the world again
 
     lock( $semaphore );
-    return unless $$halted;
     if ($$halted) {
+        return 0 if $noblock;
         threads::shared::cond_wait( $semaphore ) while $$halted;
         threads::shared::cond_broadcast( $semaphore );
 
@@ -215,10 +233,12 @@ sub _red {
 
     } elsif ($belt->onbelt > $self->{'maxboxes'}) {
         $$halted = 1;
+        return 0 if $noblock;
         threads::shared::cond_broadcast( $semaphore );
         threads::shared::cond_wait( $semaphore ) while $$halted;
         threads::shared::cond_broadcast( $semaphore );
     }
+    return 1;
 } #_red
 
 #---------------------------------------------------------------------------

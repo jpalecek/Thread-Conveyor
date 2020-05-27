@@ -74,6 +74,8 @@ sub put {
     threads::shared::cond_signal( $semaphore );
 } #put
 
+sub put_noblock { shift->put(@_); 1; }
+
 #---------------------------------------------------------------------------
 #  IN: 1 instantiated object
 # OUT: 1..N parameters returned from a box on the belt

@@ -286,8 +286,25 @@ The following methods operate on the instantiated Thread::Conveyor object.
 
  $belt->put( 'string',$scalar,[],{} );
 
-The "put" method freezes all the specified parameters together in a box and
-puts the box on the beginning of the belt.
+The "put" method freezes all the specified parameters together in a
+box and puts the box on the beginning of the belt. If the belt is
+throttled and too full (see C<L</"maxboxes">> and C<L</"minboxes">>),
+this method blocks.
+
+=head2 put_noblock
+
+ $success = $belt->put_noblock('string', $scalar);
+
+The C<put_noblock> method works just like C<L</"put">>, except that it
+doesn't block if the belt is full.
+
+=over 2
+
+=item * If C<L</"put">> would block, does nothing and returns C<0>
+
+=item * If C<L</"put">> wouldn't block, behaves just like C<L</"put">> and returns C<1>.
+
+=back
 
 =head2 take
 
