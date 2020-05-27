@@ -55,16 +55,18 @@ sub new {
 # Set maximum number of boxes if applicable
 # Return now with an unthrottled array implementation if so required
 
-    $self->{'maxboxes'} = 50 unless exists( $self->{'maxboxes'} );
+    my $maxboxes :shared = exists($self->{'maxboxes'}) ? $self->{'maxboxes'} : 50;
+    $self->{'maxboxes'} = \$maxboxes;
     return $class->_new( $class.'::'.(qw(Tied Array)[$optimize eq 'cpu']) )
-      if !$self->{'maxboxes'};
+        if !$maxboxes;
 
 # Set minimum number of boxes if applicable
 # Initialize a shared halted flag
 # Safe a reference to it in the object
 # Use the ::Throttled implementation (which will figure which optimization)
 
-    $self->{'minboxes'} ||= $self->{'maxboxes'} >> 1;
+    my $minboxes : shared = $self->{'minboxes'} // ($maxboxes >> 1);
+    $self->{'minboxes'} = \$minboxes;
     my $halted : shared = 0;
     $self->{'halted'} = \$halted;
     $class->_new( $class.'::Throttled',$self );

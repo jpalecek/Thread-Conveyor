@@ -159,8 +159,12 @@ sub maxboxes {
 # Return current value
 
     my $self = shift;
-    $self->{'minboxes'} = ($self->{'maxboxes'} = shift) >> 1 if @_;
-    $self->{'maxboxes'};
+    my $maxboxes =  $self->{'maxboxes'};
+    if (@_) {
+        $$maxboxes = shift;
+        $self->minboxes($$maxboxes/2);
+    }
+    $$maxboxes;
 } #maxboxes
 
 #---------------------------------------------------------------------------
@@ -175,8 +179,17 @@ sub minboxes {
 # Return current value
 
     my $self = shift;
-    $self->{'minboxes'} = shift if @_;
-    $self->{'minboxes'};
+    my $minboxes = $self->{'minboxes'};
+    if (@_) {
+        my ($minboxes, $semaphore, $halted) = @$self{qw/minboxes semaphore halted/};
+        $$minboxes = shift;
+        lock($semaphore);
+        if ($$halted and $$minboxes >= $self->onbelt) {
+            $$halted = 0;
+            threads::shared::cond_broadcast( $semaphore );
+        }
+    }
+    $$minboxes;
 } #minboxes
 
 #---------------------------------------------------------------------------
@@ -210,7 +223,7 @@ sub _red {
 # Obtain local copy of the belt
 
     my $self = shift;
-    return 1 unless $self->{'maxboxes'};
+    return 1 unless $self->maxboxes;
     my $noblock = shift;
     my ($belt,$semaphore,$halted) = @$self{qw(belt semaphore halted)};
 
@@ -230,7 +243,7 @@ sub _red {
 #  Wait until the halt flag is reset
 #  Notify the rest of the world again
 
-    } elsif ($belt->onbelt > $self->{'maxboxes'}) {
+    } elsif ($belt->onbelt > $self->maxboxes) {
         $$halted = 1;
         return 0 if $noblock;
         threads::shared::cond_wait( $semaphore ) while $$halted;
@@ -248,7 +261,7 @@ sub _green {
 # Get local copies of the stuff we need
 
     my $self = shift;
-    return unless $self->{'maxboxes'};
+    return unless $self->maxboxes;
     my ($belt,$semaphore,$halted) = @$self{qw(belt semaphore halted)};
 
 # Lock access to the belt
@@ -257,7 +270,7 @@ sub _green {
 
     lock( $semaphore );
     return unless $$halted;
-    return if $belt->onbelt > $self->{'minboxes'};
+    return if $belt->onbelt > $self->minboxes;
 
 # Reset the halted flag, allow box putting again
 # Wake up all of the other threads to allow them to submit again

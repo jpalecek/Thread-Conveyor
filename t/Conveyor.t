@@ -7,7 +7,7 @@ BEGIN {				# Magic Perl CORE pragma
 
 use strict;
 use warnings;
-use Test::More tests => 2 + (2 * (16 + 3 * (3 * 4) ) );
+use Test::More tests => 2 + (2 * (16 + 3 * (3 * 5 + 2 * 6 + 1) ) );
 
 BEGIN { use_ok('Thread::Conveyor') }
 
@@ -76,7 +76,7 @@ foreach my $optimize (qw(cpu memory)) {
   cmp_ok( @e, '==', 0,			'check # elements dontwait' );
   $belt->shutdown;
 
-  foreach my $times (10,100,1000) {
+  foreach my $times (10,1000,100000) {
 
     foreach (
      {@base},
@@ -84,6 +84,7 @@ foreach my $optimize (qw(cpu memory)) {
      {@base, maxboxes => 500, minboxes => 495},
     ) {
 
+      my %saved = (%$_);
       my $belt = Thread::Conveyor->new( $_ );
 
       isa_ok( $belt,'Thread::Conveyor',	'check object type' );
@@ -98,10 +99,35 @@ foreach my $optimize (qw(cpu memory)) {
       } );
       isa_ok( $thread,'threads',		'check object type' );
 
+
+      my $mb = eval { $belt->maxboxes };
+      if ($@) {
+          $mb = $times;
+          ok (! defined $saved{'maxboxes'}, 'maxboxes weren\'t defined if it throws');
+      } else {
+          cmp_ok ($mb, '==', $saved{'maxboxes'} // 50, 'check the preset number of maxboxes');
+          $belt->maxboxes($mb+2);
+          cmp_ok ($belt->maxboxes, '==', $mb+2, 'check setting maxboxes');
+
+          threads->new(sub { $belt->maxboxes($mb+1); })->join;
+          cmp_ok ($belt->maxboxes, '==', $mb+1, 'check setting maxboxes from a thread');
+
+          $belt->minboxes($mb-2);
+          cmp_ok ($belt->minboxes, '==', $mb-2, 'check setting minboxes');
+
+          threads->new(sub { $belt->minboxes($mb-1); })->join;
+          cmp_ok ($belt->minboxes, '==', $mb-1, 'check setting minboxes from a thread');
+
+          $belt->maxboxes($mb);
+          cmp_ok ($belt->minboxes, '==', $mb/2, 'check that maxboxes sets minboxes');
+      }
+      my $maxboxes_ok = 0;
       foreach ((1..$times),undef) {
           $belt->put( $_ );
+          $maxboxes_ok++ if $mb>=$belt->onbelt;
       }
       ok( !defined( $thread->join ),	'check result of join()' );
+      ok( $maxboxes_ok > 0.9*$times, 'throttling works OK' );
 
       my $check = '';
       $check .= $_ foreach 1..$times;
